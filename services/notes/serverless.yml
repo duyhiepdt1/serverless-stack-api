@@ -1,4 +1,4 @@
-service: notes-app-api
+service: notes-api
 
 # Create an optimized package for our functions
 package:
@@ -20,27 +20,27 @@ provider:
   name: aws
   runtime: nodejs12.x
   stage: dev
-  region: us-east-2
+  region: us-east-1
 
   # These environment variables are made available to our functions
   # under process.env.
   environment:
-    tableName: !ImportValue '${self:custom.sstApp}-TableName'
     stripeSecretKey: ${env:STRIPE_SECRET_KEY}
+    tableName: !ImportValue '${self:custom.sstApp}-TableName'
 
-  # 'iamRoleStatements' defines the permission policy for the Lambda function.
-  # In this case Lambda functions are granted with permissions to access DynamoDB.
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
         - dynamodb:Scan
+        - dynamodb:Query
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: 
+        - dynamodb:DescribeTable
+      # Restrict our IAM role permissions to
+      # the specific table for the stage
+      Resource:
         - !ImportValue '${self:custom.sstApp}-TableArn'
 
 functions:
@@ -58,7 +58,7 @@ functions:
           method: post
           cors: true
           authorizer: aws_iam
-          
+
   get:
     # Defines an HTTP API endpoint that calls the main function in get.js
     # - path: url path is /notes/{id}
@@ -70,7 +70,7 @@ functions:
           method: get
           cors: true
           authorizer: aws_iam
-          
+
   list:
     # Defines an HTTP API endpoint that calls the main function in list.js
     # - path: url path is /notes
@@ -82,7 +82,7 @@ functions:
           method: get
           cors: true
           authorizer: aws_iam
-          
+
   update:
     # Defines an HTTP API endpoint that calls the main function in update.js
     # - path: url path is /notes/{id}
@@ -94,7 +94,7 @@ functions:
           method: put
           cors: true
           authorizer: aws_iam
-          
+
   delete:
     # Defines an HTTP API endpoint that calls the main function in delete.js
     # - path: url path is /notes/{id}
@@ -106,7 +106,7 @@ functions:
           method: delete
           cors: true
           authorizer: aws_iam
-          
+
   billing:
     # Defines an HTTP API endpoint that calls the main function in billing.js
     # - path: url path is /billing
@@ -125,5 +125,3 @@ resources:
   - ${file(resources/api-gateway-errors.yml)}
   # Cognito Identity Pool Policy
   - ${file(resources/cognito-policy.yml)}
-
-# git push comments to trigger dev deployment process
